@@ -1,0 +1,78 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f1f1f1;
+}
+
+#regForm {
+  margin: auto;
+  width: 80%;
+}
+
+h1 {
+  text-align: center;  
+}
+
+input {
+  padding: 10px;
+  width: 100%;
+  font-size: 17px;
+  border: 1px solid #aaaaaa;
+}
+
+/* Mark input boxes that gets an error on validation: */
+input.invalid {
+  background-color: #ffdddd;
+}
+
+/* Hide all steps by default: */
+.tab {
+  display: none;
+}
+
+button {
+  background-color: #BE1E2D;
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+
+
+/* Make circles that indicate the steps of the form: */
+.step {
+  height: 12px;
+  width: 12px;
+  margin: 0 2px;
+  background-color: #A7A9AC;
+  border: none;  
+  border-radius: 50%;
+  display: inline-block;
+}
+@media (max-width: 576px) {
+  .step {
+    height: 8px;
+    width: 8px;
+  }
+}
+
+
+.step.active {
+  background-color: #808285;
+}
+
+/* Mark the steps that are finished and valid: */
+.step.finish {
+  background-color: #808285;
+}
+#selectTime option:hover {
+  background-color: #fff300;
+}

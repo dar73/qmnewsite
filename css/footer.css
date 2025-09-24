@@ -1,0 +1,150 @@
+div#footer {
+    /* display: flex; */
+    justify-content: space-around;
+    /* padding: 0px 40px; */
+    /* position: fixed; */
+    /* width: 95%; */
+    padding: 30px;
+    bottom: 0;
+    font-family: sans-serif;
+    font-size: 14px;
+}
+h3.b_hEADING {
+    MARGIN: 0PX;
+}
+li.nexttitle {
+    PADDING: 0PX;
+}
+div#maina {
+    /* position: fixed; */
+    width: 100%;
+    bottom: 0;
+    background: white;
+}
+.bottomlogo {
+    width: 3%;
+    /* height: 50px; */
+    margin: 20px;
+    margin-bottom: 0px;
+}
+.firstblock {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-gap: 30px;
+}
+li.nexttitle {
+    color: #7d7d7d;
+    list-style-type: none;
+}
+p.nexttitlea {
+    color: #7d7d7d;
+}
+
+.containerb {
+    max-width: 1300px;
+}
+.mobielcon {
+    display: flex;
+    max-width: 1000px;
+}
+.mobilecon {
+    width: 100vh;
+    height: 100vh;
+}
+.special{
+    width: 100vh;
+}
+img.group_imga {
+    width: 60%;
+}
+
+/* main */
+.mobielcon {
+    margin: 70px;
+}
+h1.main_heading {
+    color: white;
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    font-size: 40px;
+}
+h1.main_heading {
+    color: white;
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    font-weight: 100;
+}
+li.point_num {
+    color: white;
+    font-family: monospace;
+    letter-spacing: 1px;
+    font-size: 25px;
+    color: #6dd3ff;
+    line-height: 50px;
+}
+p.textb {
+    color: #828282;
+    font-family: sans-serif;
+}
+.lastblock {
+    display: flex;
+    justify-content:center;
+}
+.bottomlogo {
+    width: 50px;
+    height: 50px;
+    margin: 20px;
+}
+.three_logo {
+    display: flex;
+    justify-content: center;
+}
+img.small_log {
+    width: 100%;
+}
+.firstblock {
+    margin-right: 40px;
+}
+div#maina {
+    width: 100%;
+    bottom: 0;
+    box-shadow: rgb(14 30 37 / 12%) 0px 2px 4px 0px, rgb(14 30 37 / 32%) 0px 2px 16px 0px;
+}
+.bottomlogo {
+    width: 3%;
+    height: inherit;
+    margin: 20px;
+    margin-bottom: 0px;
+}
+p.textb.last_text {
+    font-size: 14px;
+    margin: 0px;
+}
+p.textb.secont_text {
+    margin: 0px;
+}
+div#footer {
+    display: flex;
+}
+
+
+@media (max-width:952px){
+    div#footer {
+        display: flex;
+        flex-direction: column;
+    }
+    .firstblock {
+        display: grid;
+        grid-template-rows: 1fr;
+        grid-gap: 30px;
+    }
+    div#maina{
+        margin-top: 100px;
+    }
+    .bottom_footer{
+        display: none;
+    }
+    li.nexttitle {
+        font-size: 12px;
+    }
+}

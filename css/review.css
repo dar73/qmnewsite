@@ -1,0 +1,160 @@
+body{
+    margin:0px;
+    padding: 0px;
+    display: grid;
+    justify-content: center;
+}
+h1.top_heading {
+    text-align: center;
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    color: #6f6f6f;
+    margin-top: 30px;
+}
+.containera {
+    max-width: 1300px;
+    height:750px;
+}
+.itema {
+    margin: 12px;
+    /* width: 122px; */
+    height: 122px;
+}
+.twogroup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    padding-top: 60px;
+}
+.itema.fitem {
+    flex-grow: 2;
+}
+.itema.sitem {
+    flex-grow: 3;
+    padding-left:30px;
+}
+img.group_img {
+    width: 100%;
+}
+.userOne {
+    display: flex;
+    justify-content: center;
+}
+img.smallavtar {
+    width: 100%;
+}
+img.smallavtar {
+    width: 140px;
+    border-radius: 20px;
+}
+h2.top_name {
+    font-family: sans-serif;
+    color: #777777;
+}
+p.para {
+    font-family: sans-serif;
+    /* letter-spacing: 1px; */
+    font-size: 14px;
+    color: #595959;
+    margin-top: 0px;
+}
+h2.top_name {
+    margin-bottom: 10px;
+}
+img.starRating {
+    width: 30%;
+}
+img.starRating {
+    width: 30%;
+    margin-left: -5px;
+}
+.Imgdesc {
+    margin-left: 14px;
+}
+h2.top_name {
+    font-weight: 100;
+}
+img.group_img {
+    width: 400px;
+    height: 400px;
+}
+img.pulsegif {
+    width: 300px;
+    margin-top: -15px;
+}
+.itema.fitem {
+    flex-grow: 2;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    justify-items: center;
+}
+img.smallavtar {
+    width: 140px;
+    height: 100%;
+}
+.userOne {
+    margin-top: 40px;
+}
+.userOne {
+    margin-top: 40px;
+    max-width: 600px;
+}
+.userdetail.seconda {
+    order: 2;
+}
+.userOne {
+    margin-top: 40px;
+    max-width: 600px;
+    box-shadow: rgb(0 0 0 / 24%) 0px 3px 8px;
+    padding: 20px;
+    border-radius: 20px;
+}
+.Imgdesc.seconda {
+    padding-right: 20px;
+}
+.Imgdesc.firsta {
+    margin-left: 20px;
+}
+
+
+@media (max-width:952px){
+    .itema.fitem {
+display: none;
+}
+.userOne {
+display: flex;
+flex-direction: column;
+}
+.userdetail {
+display: flex;
+justify-content: center;
+}
+img.smallavtar {
+width: 140px;
+height: 100%;
+border-radius: 50%;
+}
+.userdetail.seconda{
+order:1;
+order: inherit;
+}
+.twogroup{
+padding:inherit;
+}
+.itema.sitem{
+padding-left: 0px;
+margin: 30px;
+margin-top: 0px;
+}
+h1.top_heading {
+text-align: center;
+font-family: sans-serif;
+letter-spacing: 1px;
+font-size: 24px;
+letter-spacing: 1px;
+color: dimgrey;
+margin-bottom: 0px;
+}       
+
+}

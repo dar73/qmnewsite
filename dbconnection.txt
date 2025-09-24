@@ -1,0 +1,12 @@
+<?php
+
+$CON = new mysqli('localhost', 'thequou8_quotemaster', 'thequotemasters@1234', 'thequou8_qm');
+
+
+
+if ($CON->connect_error) {
+
+    die("Connection failed: " . $CON->connect_error);
+}
+
+define('DOCROOT', '/home4/thequou8/public_html/ctrl/');

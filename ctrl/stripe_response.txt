@@ -1,0 +1,68 @@
+Your Payment has been Successful!
+Stripe\PaymentIntent Object
+(
+    [id] => pi_3MZcYESH6AOFY3b91Dd7n8wO
+    [object] => payment_intent
+    [amount] => 12500
+    [amount_capturable] => 0
+    [amount_details] => Stripe\StripeObject Object
+        (
+            [tip] => Array
+                (
+                )
+
+        )
+
+    [amount_received] => 12500
+    [application] => 
+    [application_fee_amount] => 
+    [automatic_payment_methods] => 
+    [canceled_at] => 
+    [cancellation_reason] => 
+    [capture_method] => automatic
+    [client_secret] => pi_3MZcYESH6AOFY3b91Dd7n8wO_secret_4ZvgETc032bDnmuuH5POsLL40
+    [confirmation_method] => automatic
+    [created] => 1675958446
+    [currency] => usd
+    [customer] => 
+    [description] => 
+    [invoice] => 
+    [last_payment_error] => 
+    [latest_charge] => ch_3MZcYESH6AOFY3b91cPeQ6mO
+    [livemode] => 
+    [metadata] => Stripe\StripeObject Object
+        (
+        )
+
+    [next_action] => 
+    [on_behalf_of] => 
+    [payment_method] => pm_1MZcYDSH6AOFY3b9Ko5x8Cm1
+    [payment_method_options] => Stripe\StripeObject Object
+        (
+            [card] => Stripe\StripeObject Object
+                (
+                    [installments] => 
+                    [mandate_options] => 
+                    [network] => 
+                    [request_three_d_secure] => automatic
+                )
+
+        )
+
+    [payment_method_types] => Array
+        (
+            [0] => card
+        )
+
+    [processing] => 
+    [receipt_email] => 
+    [review] => 
+    [setup_future_usage] => 
+    [shipping] => 
+    [source] => 
+    [statement_descriptor] => 
+    [statement_descriptor_suffix] => 
+    [status] => succeeded
+    [transfer_data] => 
+    [transfer_group] => 
+)

@@ -1,0 +1,427 @@
+<?php
+$NO_PRELOAD = $NO_REDIRECT = '1';
+require_once('../includes/common_front.php');
+include "../includes/GoogleCalendarApi.class.php";
+
+$GoogleCalendarApi = new GoogleCalendarApi();
+// sleep(5);
+// DFA($_POST);
+// exit;
+
+// [IsDiscount] => Y
+//     [txtdisamt] => 10
+//  [mode] => U
+//     [APPID] => 259
+//     [txtspID] => 380
+//     [title] => test
+//     [description] => test
+//     [location] => shadsa
+$APPID = $_POST['APPID'];
+$SPID = $_POST['txtspID'];
+$title = db_input2($_POST['title']);
+$desc = db_input2($_POST['description']);
+$location = db_input2($_POST['location']);
+
+$TIMEPICKER_ARR = GetXArrFromYID("select Id,title from apptime ", "3");
+
+$TIMEZONE_S = isset($_POST['cmbTimezone']) ? db_input2($_POST['cmbTimezone']) : 'NO'; //db_input2($_POST['TIMEZONE_S']);
+
+$SP_DATA = GetDataFromCOND("service_providers", " and id='$SPID' ");
+$SP_FIRST_NAME = db_input2($SP_DATA[0]->First_name);
+$SP_LAST_NAME = db_input2($SP_DATA[0]->Last_name);
+$SP_ADDRESS = db_input2($SP_DATA[0]->street);
+$SP_CITY = db_input2($SP_DATA[0]->city);
+$SP_STATE = db_input2($SP_DATA[0]->state);
+$SP_CALENDAR_TYPE = db_input2($SP_DATA[0]->cCalendarAct);
+
+$access_token = GetXFromYID("select vAccessToken from service_providers where id=$SPID ");
+$refresh_token = GetXFromYID("select vRefreshToken from service_providers where id=$SPID ");
+$CCEMAILS = GetXFromYID("SELECT  vEmail FROM sp_ccmails WHERE iSPID=$SPID");
+
+
+$BID = GetXFromYID("select iBookingID from appointments where iApptID='$APPID' "); //db_input2($_POST['BID']);
+$date = ''; //db_input2($_POST['date']);
+$start_time = ''; //db_input2($_POST['time_from']);
+$end_time = ''; //db_input2($_POST['time_to']);
+
+$Q1ANS = GetXFromYID("select iAnswerID from leads_answersheet where iResponseID='$BID' and  iQuesID='1' ");
+
+// if ($Q1ANS == '101' || $Q1ANS == '102') {
+//     $AMOUNT = 85;
+// } elseif ($Q1ANS == '103') {
+//     $AMOUNT = 99;
+// } else {
+$AMOUNT = 0;
+
+//}
+
+// echo $AMOUNT;
+// exit;
+
+//$AMOUNT = 1;
+
+$CFEE = $AMOUNT * 0.03;
+$DEBIT_AMT = $AMOUNT + $CFEE;
+$DEBIT_AMT = number_format($DEBIT_AMT, 2);
+
+//check if already sold
+$_q1 = "select * from appointments  where cService_status='B' and cStatus='A' and iApptID='$APPID' ";
+$_r1 = sql_query($_q1);
+// echo sql_num_rows($_r1);
+// exit;
+if (sql_num_rows($_r1)) {
+    echo "0~Appointment slot has been sold already.";
+    //header("location: $disp_url");
+    exit;
+}
+
+if (empty($access_token) && empty($refresh_token)) {
+    //$access_token = $access_token;
+    // echo "0~Calendar Approval not done.";
+    // //header("location: $disp_url");
+    // exit;
+}
+
+$ACCESS = $GoogleCalendarApi->RefreshAccessToken(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, $refresh_token);
+
+if (empty($ACCESS['data'])) {
+    // echo "0~Refresh Token Expired please request new one.";
+    //header("location: $disp_url");
+    // exit;
+}
+$access_token = $ACCESS['data']['access_token'];
+
+
+$AUTH_GUID = GetXFromYID("select payment_id from transaction2 where pid='$SPID' and payment_status='A' order by id desc limit 1 ");
+if (empty($AUTH_GUID)) {
+    echo  "0~SP's AUTH_GUID DOES NOT EXIST CANNOT PROCEED WITH DEBIT .";
+    //header("location: $disp_url");
+    exit;
+}
+
+//STEP 1 STARTS 
+sql_query("LOCK TABLES transaction WRITE, buyed_leads WRITE,appointments WRITE,buyed_leads_dat WRITE,booking WRITE,customers WRITE,service_providers WRITE,platinum_purchase_leads write");
+
+$ID = NextID('id', 'transaction');
+$_q = "insert into transaction values ('$ID','$BID','$APPID','$SPID','','','$DEBIT_AMT','" . NOW . "','online','P')";
+$_r = sql_query($_q, "");
+
+UnlockTable();
+
+
+SendInBlueMail("Assigned Lead $APPID", 'darshankubal1@gmail.com', "Assigned Lead $APPID", '', 'michael2@thequotemasters.com', '', 'michael2@thequotemasters.com');
+
+if (true) {
+    // echo 'hiii';
+    // exit;
+    sql_query("LOCK TABLES transaction WRITE, buyed_leads WRITE,appointments WRITE,buyed_leads_dat WRITE,booking WRITE,customers WRITE,service_providers WRITE,platinum_purchase_leads write");
+    $TRANS_ID = $ID; //$RESPONSE_ARR['7']['TRAN_NBR'];
+    $TRANS_REF = 'POST_PAY_APPT'; //$RESPONSE_ARR['10']['AUTH_GUID'];
+
+    $_q1 = "select  booking_id, pid,iApptID FROM transaction where id='$TRANS_ID'  ";
+    $_r1 = sql_query($_q1, "");
+    list($bookingID, $pid, $iApptID) = sql_fetch_row($_r1);
+    $_q2 = "update transaction set payment_id='$TRANS_REF',payment_status='S' where id='$TRANS_ID' ";
+    sql_query($_q2, "");
+
+    $updatebookingdat = "update buyed_leads_dat set cStatus='A' where iTransID='$TRANS_ID' "; //update dat table
+    sql_query($updatebookingdat);
+
+    $_q3 = "INSERT INTO buyed_leads VALUES (NOW(),'$pid','$bookingID','$iApptID','$DEBIT_AMT','$TRANS_REF')";
+    sql_query($_q3, "");
+    $_q4 = "UPDATE booking SET cService_status='B' WHERE iBookingID='$bookingID' ";
+    sql_query($_q4, "");
+    $_q5 = "UPDATE appointments SET cService_status='B' WHERE iBookingID='$bookingID' and iApptID='$iApptID' ";
+    sql_query($_q5, "");
+
+    //insert into purchase leads table
+    $_qpl = "INSERT INTO platinum_purchase_leads(dDate, ivendor_id, ibooking_id, iApptID, fAmt, vTransactionID, cPaid,cStatus) VALUES (NOW(),'$pid','$bookingID','$iApptID','$DEBIT_AMT','$TRANS_REF','N','A')";
+    sql_query($_qpl);
+
+    UnlockTable();
+
+    $_q6 = "select iCustomerID,dDateTime,iAppTimeID from appointments where iApptID='$iApptID' ";
+    $_q6r = sql_query($_q6, "");
+    list($CUSTID, $DATEB, $TIMEID) = sql_fetch_row($_q6r);
+
+    $Customer_name = GetXFromYID("select  CONCAT(vFirstname, ' ', vLastname) as full_name from customers where iCustomerID='$CUSTID' ");
+    $ADATE = date('m-d-Y', strtotime($DATEB));
+    $ATIME = $TIMEPICKER_ARR[$TIMEID];
+
+    //send mail alert to customers
+    $email = GetXFromYID("select vEmail from customers where iCustomerID='$CUSTID' ");
+    $company_name = GetXFromYID("select company_name from service_providers where id='$pid' ");
+    $Cleaners_name = GetXFromYID("select  CONCAT(First_name, ' ', Last_name) as full_name from service_providers where id='$pid' ");
+    $SP_EMAIL = GetXFromYID("select  email_address  from service_providers where id='$pid' ");
+    $to = db_output2($email);
+    $subject = "Appointment Update";
+
+    //mail($to, $subject, $mail_content, $headers);
+    //Send_mail('', '', $to, '', '', 'darshankubal1@gmail.com', $subject, $mail_content, '');
+    //Send_mail('', '','darshankubal1@gmail.com', '', '', '', "Payment Ping", $PAYMENT_STR, '');
+    //SendInBlueMail($subject, $to, $mail_content, '', '', '', 'darshankubal1@gmail.com');
+    //SendInBlueMail("Payment Ping", 'darshankubal1@gmail.com', $PAYMENT_STR, '', 'michael2@thequotemasters.com', '', '');
+
+
+    //MODIFIED TO SENT ALERT TO SP REGARDING LEAD PURCHASED
+    $MAIL_BODY = GET_LEAD_MAIL_CONTENT($APPID, $Cleaners_name);
+    SendInBlueMail("Lead Purchase Success", $SP_EMAIL, $MAIL_BODY, '', $CCEMAILS, '', "michael2@thequotemasters.com");
+
+    //STEP 2 START
+
+    $q = "SELECT date_format(A.dDateTime,'%Y-%m-%d'),time_format(T.time,'%H:%i') FROM appointments A INNER JOIN apptime T ON T.Id = A.iAppTimeID where  A.cStatus='A' and A.iApptID='$APPID'  ";
+    $r = sql_query($q);
+    if (sql_num_rows($r)) {
+        list($date, $start_time) = sql_fetch_row($r);
+
+        if ($TIMEZONE_S == 'MT') {
+            $start_time = date("H:i", strtotime($start_time . ' +2 hours'));
+        } elseif ($TIMEZONE_S == 'PT') {
+            $start_time = date("H:i", strtotime($start_time . ' +3 hours'));
+        } elseif ($TIMEZONE_S == 'CT') {
+            $start_time = date("H:i", strtotime($start_time . ' +1 hours'));
+        }
+        
+        $end_time = date("H:i", strtotime("$start_time +30 minutes"));
+    }
+
+    $calendar_event = array(
+        'summary' => $title,
+        'location' => $location,
+        'description' => $desc
+    );
+
+    $event_datetime = array(
+        'event_date' => $date,
+        'start_time' => $start_time,
+        'end_time' => $end_time
+    );
+
+    // DFA($event_datetime);
+    // exit;
+
+
+    //QM ACCESS TOKEN
+    $RefreshToken = GetXFromYID("select vRefreshToken from ops_calendar_config ");
+
+    $ACCESS = $GoogleCalendarApi->RefreshAccessToken(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, $RefreshToken);
+
+    $access_token = $ACCESS['data']['access_token'];
+
+    //$attendees = ['ops@thequotemasters.com', $APPOINTMENT_EMAIL];
+
+
+    // Get the user's calendar timezone 
+    $user_timezone = $GoogleCalendarApi->GetUserCalendarTimezone($access_token);
+    //list($timezone,$msg) = $user_timezone;
+    if ($user_timezone['msg'] == 'fail') {
+        $ACCESS_RES = $GoogleCalendarApi->RefreshAccessToken(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, $RefreshToken);
+        $access_token = $ACCESS_RES['data']['access_token'];
+        //sql_query("update service_providers set vAccessToken='$access_token' where id='$SPID' ");
+    }
+    $user_timezone = $GoogleCalendarApi->GetUserCalendarTimezone($access_token);
+    $timezone = $user_timezone['data'];
+
+    // echo $timezone;
+    // exit;
+    //$data = $GoogleCalendarApi->GetCalendarEvents($access_token, 'primary');
+
+    //DFA($data);
+
+    $attendees = ['ops@thequotemasters.com', $SP_EMAIL, $email];
+
+    //COMMENTED ON 2025-08-25
+    // $response = $GoogleCalendarApi->CreateCalendarEventWithInvite($access_token, 'primary', $calendar_event, 0, $event_datetime, $timezone, $attendees);
+
+    // if ($response['msg'] == 'token_expire') {
+    //     $ACCESS = $GoogleCalendarApi->RefreshAccessToken(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, $RefreshToken);
+
+    //     $access_token = $ACCESS['data']['access_token'];
+    //     // echo $access_token;
+    //     // exit;
+    //     $response = $GoogleCalendarApi->CreateCalendarEventWithInvite($access_token, 'primary', $calendar_event, 0, $event_datetime, $timezone, $attendees);
+    // }
+
+    //END
+
+    if ($SP_CALENDAR_TYPE == 'G') {
+        $response = $GoogleCalendarApi->CreateCalendarEventWithInvite($access_token, 'primary', $calendar_event, 0, $event_datetime, $timezone, $attendees);
+
+        if ($response['msg'] == 'token_expire') {
+            $ACCESS = $GoogleCalendarApi->RefreshAccessToken(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, $RefreshToken);
+
+            $access_token = $ACCESS['data']['access_token'];
+            // echo $access_token;
+            // exit;
+            $response = $GoogleCalendarApi->CreateCalendarEventWithInvite($access_token, 'primary', $calendar_event, 0, $event_datetime, $timezone, $attendees);
+        }
+    } elseif ($SP_CALENDAR_TYPE == 'M') {
+        $access_token = GetXFromYID("SELECT vAccessToken  FROM m_calendar_config WHERE 1");
+        $refresh_token = GetXFromYID("SELECT vRefreshToken  FROM m_calendar_config WHERE 1");
+
+
+        $DATA = getNewAccessToken($refresh_token);
+
+        $refresh_token = $DATA['refresh_token'];
+        $access_token = $DATA['access_token'];
+
+        sql_query("UPDATE m_calendar_config SET vAccessToken = '$access_token', vRefreshToken = '$refresh_token' WHERE 1");
+        $event_date =  $date;
+
+        // $start_time = date("H:i", strtotime(NOW . ' +7 hours'));
+        // $end_time = date("H:i", strtotime($start_time . ' +1 hours'));
+        $dateTime_start = $event_date . 'T' . $start_time . ':00';
+        $dateTime_end = $event_date . 'T' . $end_time . ':00';
+
+
+
+        $timeZone = "America/New_York";
+
+        $result = createMicrosoftEvent(
+            $access_token,
+            $title,
+            $dateTime_start,
+            $dateTime_end,
+            $timeZone,
+            $desc,
+            $location,
+            [
+                ["email" => "michaelchartrand@quotemasters.onmicrosoft.com", "name" => "Michael"],
+                ["email" => $SP_EMAIL, "name" => $SP_FIRST_NAME]
+            ]
+        );
+        if ($result) {
+            //echo "Event created successfully!";
+        } else {
+            //echo "Failed to create event.";
+        }
+    }
+
+
+    // DFA($response);
+    // exit;
+
+    //     ArrayRESPONSE OF CALENDAR EVENT
+    // (
+    //     [data] => 0jgknrjffpa2v4v9f6f1lho340
+    //     [msg] => success
+    // )
+
+    // Create an event on the primary calendar 
+    // $EVENT_RESPONSE = $GoogleCalendarApi->CreateCalendarEvent($access_token, 'primary', $calendar_event, 0, $event_datetime, $timezone);
+
+    // if ($EVENT_RESPONSE['msg'] == 'token_expire') {
+    //     $ACCESS_RES = $GoogleCalendarApi->RefreshAccessToken(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, $refresh_token);
+    //     $access_token = $ACCESS_RES['data']['access_token'];
+    //     sql_query("update service_providers set vAccessToken='$access_token' where id='$SPID' ");
+    //     $user_timezone = $GoogleCalendarApi->GetUserCalendarTimezone($access_token);
+    //     $timezone = $user_timezone['data'];
+    //     $EVENT_RESPONSE = $GoogleCalendarApi->CreateCalendarEvent($access_token, 'primary', $calendar_event, 0, $event_datetime, $timezone);
+    // }
+
+    //   DFA($EVENT_RESPONSE);
+    //   exit;
+
+
+    echo "1~Event Details Successfully Inserted";
+    exit;
+} else {
+    echo "0~Card debit  failed!!";
+    exit;
+}
+
+
+
+
+function generateRandomNumber()
+{
+    $min = 1;
+    $max = 9999999999; // Maximum 10-digit number
+
+    return mt_rand($min, $max);
+}
+//DFA($keyValuePairs);
+
+function SendInBlueMail($subject, $email, $contents, $attachment, $cc = '', $site_title = '', $bcc = '')
+{
+    if (empty($site_title))
+        $site_title = 'Quote Masters';
+
+    if (!empty($contents))
+        //$contents .= '<br /><img src="'.SITE_ADDRESS.'img/mail_signature-latest.jpg" alt="Mail Signature" />';
+
+        //$cc = '';
+    // if ($subject != 'OTP for Login') //empty($bcc) && 
+    // $bcc = 'ops@thequotemasters.com';
+
+    $config = array();
+    $config['api_key'] = "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";
+    $config['api_url'] = "https://api.sendinblue.com/v3/smtp/email";
+
+    $message = array();
+    $message['sender'] = array("name" => "$site_title", "email" => "ops@thequotemasters.com");
+    $message['to'][] = array("email" => "$email");
+    $message['replyTo'] = array("name" => "$site_title", "email" => "ops@thequotemasters.com");
+
+    if (!empty($cc)) {
+        $cc_arr = explode(",", $cc);
+        for ($c = 0; $c < sizeof($cc_arr); $c++)
+            $message['cc'][] = array("email" => "$cc_arr[$c]");
+    }
+
+    if (!empty($bcc)) {
+        $bcc_arr = explode(",", $bcc);
+        if (!in_array('ops@thequotemasters.com', $bcc_arr)) {
+            $bcc_arr[] = 'ops@thequotemasters.com';
+            $bcc = implode(",", $bcc_arr);
+        }
+        for ($b = 0; $b < sizeof($bcc_arr); $b++)
+            $message['bcc'][] = array("email" => "$bcc_arr[$b]");
+    } else {
+        $bcc = 'ops@thequotemasters.com';
+    }
+
+    $message['subject'] = $subject;
+    $message['htmlContent'] = $contents;
+
+    if (!empty($attachment)) {
+        if (is_array($attachment)) {
+            $attachment_item[] = array('url' => $attachment);
+            $attachment_list = array($attachment_item);
+
+            // Ends pdf wrapper
+            $message['attachment'] = $attachment_list;
+        } else {
+            $attachment_item = array('url' => $attachment);
+            $attachment_list = array($attachment_item);
+            // Ends pdf wrapper
+
+            $message['attachment'] = $attachment_list;
+        }
+    }
+
+    $message_json = json_encode($message);
+
+    $ch = curl_init();
+    curl_setopt(
+        $ch,
+        CURLOPT_URL,
+        $config['api_url']
+    );
+    curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $message_json);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'accept: application/json',
+        'api-key: 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',
+        'content-type: application/json'
+    ));
+    $result = curl_exec($ch);
+    curl_close($ch);
+
+    return $result;
+}
